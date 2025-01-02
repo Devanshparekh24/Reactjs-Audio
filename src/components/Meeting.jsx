@@ -8,8 +8,11 @@ import {
   PhoneOff,
   Clock,
   Share,
-  MessageSquare
+  MessageSquare,
+  Camera,
+  CameraOff,
 } from "lucide-react";
+// import Metered from "@metered/video-sdk";
 
 const Meeting = () => {
   const [meeting, setMeeting] = useState(null);
@@ -18,13 +21,15 @@ const Meeting = () => {
   const [isMeetingActive, setIsMeetingActive] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [meetingDuration, setMeetingDuration] = useState(0);
+  const [isCamera, setIsCamera] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
 
+  // Timer
   useEffect(() => {
     let timer;
     if (isMeetingActive) {
       timer = setInterval(() => {
-        setMeetingDuration(prev => prev + 1);
+        setMeetingDuration((prev) => prev + 1);
       }, 1000);
     }
     return () => clearInterval(timer);
@@ -34,39 +39,21 @@ const Meeting = () => {
     if (!meeting) return;
 
     const handleParticipantJoined = (participantInfo) => {
-      setParticipants(prev => [...prev, participantInfo]);
+      setParticipants((prev) => [...prev, participantInfo]);
     };
 
     const handleParticipantLeft = (participantInfo) => {
-      setParticipants(prev =>
-        prev.filter(p => p.id !== participantInfo.id)
+      setParticipants((prev) =>
+        prev.filter((p) => p.id !== participantInfo.id)
       );
-    };
-
-    const handleRemoteTrackStarted = (remoteTrackItem) => {
-      try {
-        const remoteTrack = remoteTrackItem.track;
-        const remoteStream = new MediaStream([remoteTrack]);
-        const remoteAudio = document.getElementById("remoteAudio");
-        if (remoteAudio) {
-          remoteAudio.srcObject = remoteStream;
-          remoteAudio.play().catch(error => {
-            console.error("Error playing audio:", error);
-          });
-        }
-      } catch (error) {
-        console.error("Error handling remote track:", error);
-      }
     };
 
     meeting.on("participantJoined", handleParticipantJoined);
     meeting.on("participantLeft", handleParticipantLeft);
-    meeting.on("remoteTrackStarted", handleRemoteTrackStarted);
 
     return () => {
       meeting.off("participantJoined", handleParticipantJoined);
       meeting.off("participantLeft", handleParticipantLeft);
-      meeting.off("remoteTrackStarted", handleRemoteTrackStarted);
     };
   }, [meeting]);
 
@@ -74,7 +61,9 @@ const Meeting = () => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${hrs.toString().padStart(2, "0")}:${mins
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   const joinMeeting = async () => {
@@ -82,7 +71,7 @@ const Meeting = () => {
       const newMeeting = new Metered.Meeting();
       await newMeeting.join({
         roomURL: "videosdk.metered.live/f6ydjtvg96",
-        name: "Devansh"
+        name: "Devansh",
       });
 
       await newMeeting.startAudio();
@@ -107,34 +96,66 @@ const Meeting = () => {
     }
   };
 
-  const handleToggleMic = () => {
+  const handleToggleMic = async () => {
     if (!meeting) return;
     try {
       if (isMicMuted) {
-        meeting.unmuteMicrophone();
+        console.log("mic on");
+        await meeting.unmuteLocalAudio(); // Unmute the microphone
       } else {
-        meeting.muteMicrophone();
+        await meeting.muteLocalAudio(); // Mute the microphone
+        console.log("mic off");
       }
-      setIsMicMuted(!isMicMuted);
+      setIsMicMuted(!isMicMuted); // Update the state
     } catch (error) {
       console.error("Error toggling microphone:", error);
     }
   };
 
-  const leaveMeeting = () => {
-    if (meeting) {
-      meeting.leave();
+  // Handle Camera
+  const handleCamera = async () => {
+    if (!meeting) return;
+    try {
+      if (isCamera) {
+        console.log("camera is on");
+
+        // Request access to the user's camera
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+        // Assuming you have a video element to display the stream
+        const videoElement = document.createElement("video");
+        videoElement.srcObject = stream;
+        videoElement.play();
+
+        // Optionally, append the video element to the DOM (e.g., a div or similar)
+        document.body.appendChild(videoElement);
+      } else {
+        console.log("camera is off");
+        // Stop video stream (optional clean-up, depending on the implementation)
+        const videoTracks = document.querySelector("video")?.srcObject?.getTracks();
+        if (videoTracks) {
+          videoTracks.forEach((track) => track.stop());
+        }
+      }
+      setIsCamera(!isCamera); // Toggle the camera state
+    } catch (error) {
+      console.log("Error in video", error);
     }
-    setIsMeetingActive(false);
-    setMeeting(null);
-    setParticipants([]);
-    setMeetingDuration(0);
+  };
+
+  // Leave meeting function
+  const leaveMeeting = async () => {
+    try {
+      if (meeting) {
+        await meeting.leave(); // Leave the meeting
+      }
+    } catch (error) {
+      console.error("Error leaving the meeting:", error);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <audio id="remoteAudio" autoPlay />
-
       {!isMeetingActive ? (
         <div className="flex items-center justify-center min-h-screen">
           <div className="bg-white p-8 rounded-lg shadow-lg text-center space-y-6">
@@ -150,9 +171,7 @@ const Meeting = () => {
         </div>
       ) : (
         <div className="flex h-screen">
-          {/* Main meeting area */}
           <div className="flex-1 flex flex-col">
-            {/* Header */}
             <div className="bg-white border-b p-4 flex justify-between items-center">
               <div className="flex items-center space-x-4">
                 <Clock className="text-gray-600" />
@@ -163,11 +182,8 @@ const Meeting = () => {
                 <span className="text-gray-600">{participants.length + 1}</span>
               </div>
             </div>
-
-            {/* Meeting content */}
             <div className="flex-1 p-4 bg-gray-50">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {/* Participant cards */}
                 <div className="bg-white p-4 rounded-lg shadow">
                   <div className="w-full aspect-video bg-gray-200 rounded-lg mb-2 flex items-center justify-center">
                     <span className="text-2xl text-gray-600">You</span>
@@ -186,35 +202,32 @@ const Meeting = () => {
                 ))}
               </div>
             </div>
-
-            {/* Controls */}
             <div className="bg-white border-t p-4">
               <div className="flex justify-center space-x-4">
+                {/* mic-icon */}
                 <button
                   onClick={handleToggleMic}
-                  className={`p-3 rounded-full ${isMicMuted ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
-                    } hover:bg-gray-200`}
+                  className={`p-3 rounded-full ${isMicMuted ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"} hover:bg-gray-200`}
                 >
                   {isMicMuted ? <MicOff /> : <Mic />}
                 </button>
+                {/* volume-icon */}
                 <button
                   onClick={handleToggleAudio}
-                  className={`p-3 rounded-full ${isAudioMuted ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
-                    } hover:bg-gray-200`}
+                  className={`p-3 rounded-full ${isAudioMuted ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"} hover:bg-gray-200`}
                 >
                   {isAudioMuted ? <VolumeX /> : <Volume2 />}
                 </button>
+
+                {/* Camera-icon */}
                 <button
-                  onClick={() => setChatOpen(!chatOpen)}
-                  className="p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  className={`p-3 rounded-full ${isCamera ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"} hover:bg-gray-200`}
+                  onClick={handleCamera}
                 >
-                  <MessageSquare />
+                  {isCamera ? <CameraOff /> : <Camera />}
                 </button>
-                <button
-                  className="p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
-                >
-                  <Share />
-                </button>
+
+                {/* Leave-icon */}
                 <button
                   onClick={leaveMeeting}
                   className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600"
@@ -224,8 +237,6 @@ const Meeting = () => {
               </div>
             </div>
           </div>
-
-          {/* Chat sidebar */}
           {chatOpen && (
             <div className="w-80 bg-white border-l">
               <div className="p-4 border-b">
@@ -233,7 +244,6 @@ const Meeting = () => {
               </div>
               <div className="p-4">
                 <div className="space-y-4 h-[calc(100vh-200px)] overflow-y-auto">
-                  {/* Chat messages would go here */}
                   <p className="text-gray-500 text-center">No messages yet</p>
                 </div>
                 <div className="mt-4">
