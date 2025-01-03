@@ -112,37 +112,6 @@ const Meeting = () => {
     }
   };
 
-  // Handle Camera
-  const handleCamera = async () => {
-    if (!meeting) return;
-    try {
-      if (isCamera) {
-        console.log("camera is on");
-
-        // Request access to the user's camera
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-        // Assuming you have a video element to display the stream
-        const videoElement = document.createElement("video");
-        videoElement.srcObject = stream;
-        videoElement.play();
-
-        // Optionally, append the video element to the DOM (e.g., a div or similar)
-        document.body.appendChild(videoElement);
-      } else {
-        console.log("camera is off");
-        // Stop video stream (optional clean-up, depending on the implementation)
-        const videoTracks = document.querySelector("video")?.srcObject?.getTracks();
-        if (videoTracks) {
-          videoTracks.forEach((track) => track.stop());
-        }
-      }
-      setIsCamera(!isCamera); // Toggle the camera state
-    } catch (error) {
-      console.log("Error in video", error);
-    }
-  };
-
   // Leave meeting function
   const leaveMeeting = async () => {
     try {
@@ -175,7 +144,9 @@ const Meeting = () => {
             <div className="bg-white border-b p-4 flex justify-between items-center">
               <div className="flex items-center space-x-4">
                 <Clock className="text-gray-600" />
-                <span className="text-gray-600">{formatDuration(meetingDuration)}</span>
+                <span className="text-gray-600">
+                  {formatDuration(meetingDuration)}
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <Users className="text-gray-600" />
@@ -197,7 +168,9 @@ const Meeting = () => {
                         {participant.name.charAt(0)}
                       </span>
                     </div>
-                    <p className="text-center text-gray-700">{participant.name}</p>
+                    <p className="text-center text-gray-700">
+                      {participant.name}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -207,21 +180,33 @@ const Meeting = () => {
                 {/* mic-icon */}
                 <button
                   onClick={handleToggleMic}
-                  className={`p-3 rounded-full ${isMicMuted ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"} hover:bg-gray-200`}
+                  className={`p-3 rounded-full ${
+                    isMicMuted
+                      ? "bg-red-100 text-red-600"
+                      : "bg-gray-100 text-gray-600"
+                  } hover:bg-gray-200`}
                 >
                   {isMicMuted ? <MicOff /> : <Mic />}
                 </button>
                 {/* volume-icon */}
                 <button
                   onClick={handleToggleAudio}
-                  className={`p-3 rounded-full ${isAudioMuted ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"} hover:bg-gray-200`}
+                  className={`p-3 rounded-full ${
+                    isAudioMuted
+                      ? "bg-red-100 text-red-600"
+                      : "bg-gray-100 text-gray-600"
+                  } hover:bg-gray-200`}
                 >
                   {isAudioMuted ? <VolumeX /> : <Volume2 />}
                 </button>
 
                 {/* Camera-icon */}
                 <button
-                  className={`p-3 rounded-full ${isCamera ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"} hover:bg-gray-200`}
+                  className={`p-3 rounded-full ${
+                    isCamera
+                      ? "bg-red-100 text-red-600"
+                      : "bg-gray-100 text-gray-600"
+                  } hover:bg-gray-200`}
                   onClick={handleCamera}
                 >
                   {isCamera ? <CameraOff /> : <Camera />}
