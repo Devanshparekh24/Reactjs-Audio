@@ -17,12 +17,12 @@ import {
 const Meeting = () => {
   const [meeting, setMeeting] = useState(null);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
-  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isMicMuted, setIsMicMuted] = useState(true);
   const [isMeetingActive, setIsMeetingActive] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [meetingDuration, setMeetingDuration] = useState(0);
-  const [isCamera, setIsCamera] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [isLeft, setIsLeft] = useState(false);
 
   // Timer
   useEffect(() => {
@@ -82,13 +82,20 @@ const Meeting = () => {
     }
   };
 
-  const handleToggleAudio = () => {
+  const handleToggleAudio = async() => {
     if (!meeting) return;
     try {
       if (isAudioMuted) {
-        meeting.unmuteAudioOutput();
+        console.log("the Speaker or Audio off");
+        
+        await meeting.startAudio()
+
+        
       } else {
-        meeting.muteAudioOutput();
+        console.log("The speaker or audio on");
+        
+        await meeting.stopAudio()
+
       }
       setIsAudioMuted(!isAudioMuted);
     } catch (error) {
@@ -116,7 +123,10 @@ const Meeting = () => {
   const leaveMeeting = async () => {
     try {
       if (meeting) {
-        await meeting.leave(); // Leave the meeting
+        console.log("they left the meeting");
+        setIsLeft(true);
+        setIsMeetingActive(false);
+        await meeting.leaveMeeting();
       }
     } catch (error) {
       console.error("Error leaving the meeting:", error);
@@ -200,15 +210,18 @@ const Meeting = () => {
                   {isAudioMuted ? <VolumeX /> : <Volume2 />}
                 </button>
 
-         
-
                 {/* Leave-icon */}
-                <button
-                  onClick={leaveMeeting}
-                  className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600"
-                >
-                  <PhoneOff />
-                </button>
+                {!isLeft ? (
+                  <button
+                    onClick={leaveMeeting}
+                    className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600"
+                  >
+                    <PhoneOff />
+                  </button>
+                ) : (
+                  ""
+                  // <h2>Thank you</h2>
+                )}
               </div>
             </div>
           </div>

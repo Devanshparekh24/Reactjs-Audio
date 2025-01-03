@@ -3,7 +3,7 @@ import Meeting from './components/Meeting'
 
 export default function App() {
   return (
-    <div>
+    <div className='bg-black'>
       <Meeting/>
     </div>
   )
