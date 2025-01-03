@@ -200,17 +200,7 @@ const Meeting = () => {
                   {isAudioMuted ? <VolumeX /> : <Volume2 />}
                 </button>
 
-                {/* Camera-icon */}
-                <button
-                  className={`p-3 rounded-full ${
-                    isCamera
-                      ? "bg-red-100 text-red-600"
-                      : "bg-gray-100 text-gray-600"
-                  } hover:bg-gray-200`}
-                  onClick={handleCamera}
-                >
-                  {isCamera ? <CameraOff /> : <Camera />}
-                </button>
+         
 
                 {/* Leave-icon */}
                 <button
